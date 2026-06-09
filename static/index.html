@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gadi Tera Bhai Chalayega</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --surface: #313244;
+    --surface-2: #45475a;
+    --text: #cdd6f4;
+    --subtext: #a6adc8;
+    --muted: #6c7086;
+    --pink: #f5c2e7;
+    --mauve: #cba6f7;
+    --blue: #89b4fa;
+    --teal: #94e2d5;
+    --peach: #fab387;
+    --yellow: #f9e2af;
+    --red: #f38ba8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes floatGlow {
+    0%, 100% { transform: translateY(0); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22); }
+    50% { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(137, 180, 250, 0.14); }
+  }
+
+  @keyframes softSweep {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes typewriter {
+    0% { width: 0; }
+    45% { width: 28ch; }
+    78% { width: 28ch; }
+    100% { width: 0; }
+  }
+
+  @keyframes cursorBlink {
+    0%, 100% { border-color: transparent; }
+    50% { border-color: var(--pink); }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    padding: 10px;
+    color: var(--text);
+    font-family: "Space Mono", monospace;
+    background:
+      radial-gradient(circle at top left, rgba(245, 194, 231, 0.14), transparent 28%),
+      radial-gradient(circle at top right, rgba(137, 180, 250, 0.12), transparent 24%),
+      radial-gradient(circle at bottom left, rgba(148, 226, 213, 0.08), transparent 22%),
+      linear-gradient(135deg, var(--mantle) 0%, var(--base) 55%, #11111b 100%);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 200% 200%;
+    animation: softSweep 16s ease infinite;
+    overflow: hidden;
+  }
+  .hero {
+    min-height: 14vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  h1 {
+    display: inline-block;
+    width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid var(--pink);
+    padding-right: 0.55em;
+    font-size: clamp(0.92rem, 1.3vw, 1.2rem);
+    letter-spacing: 0.15em;
+    color: var(--pink);
+    text-transform: uppercase;
+    text-shadow: 0 0 16px rgba(245, 194, 231, 0.2);
+    animation:
+      fadeUp 0.7s ease both,
+      typewriter 13s steps(28, end) 0.2s infinite,
+      cursorBlink 0.75s step-end infinite;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .card {
+    position: relative;
+    overflow: hidden;
+    padding: 11px;
+    border-radius: 15px;
+    border: 1px solid rgba(205, 214, 244, 0.08);
+    background: linear-gradient(145deg, rgba(49, 50, 68, 0.92), rgba(24, 24, 37, 0.95));
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(10px);
+    animation: fadeUp 0.7s ease both, floatGlow 7s ease-in-out infinite;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--accent, linear-gradient(90deg, var(--blue), var(--pink)));
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(205, 214, 244, 0.18);
+    box-shadow: 0 22px 56px rgba(0, 0, 0, 0.3);
+  }
+  .card:nth-child(1) { --accent: linear-gradient(90deg, var(--pink), var(--mauve)); animation-delay: 0s, 0s; }
+  .card:nth-child(2) { --accent: linear-gradient(90deg, var(--blue), var(--teal)); animation-delay: 0.08s, 0.2s; }
+  .card:nth-child(3) { --accent: linear-gradient(90deg, var(--peach), var(--yellow)); animation-delay: 0.16s, 0.4s; }
+  .card:nth-child(4) { --accent: linear-gradient(90deg, var(--mauve), var(--blue)); animation-delay: 0.24s, 0.6s; }
+  .card .label {
+    font-size: 10px;
+    color: var(--subtext);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .card .value {
+    font-size: 22px;
+    color: var(--text);
+    font-weight: bold;
+  }
+  .card .unit {
+    font-size: 11px;
+    color: var(--subtext);
+    margin-left: 4px;
+  }
+  .card.anomaly {
+    border-color: rgba(243, 139, 168, 0.5);
+    background: linear-gradient(145deg, rgba(58, 34, 47, 0.95), rgba(24, 24, 37, 0.96));
+  }
+  .card .status {
+    font-size: 10px;
+    margin-top: 6px;
+    color: var(--teal);
+  }
+  .card.anomaly .status { color: var(--red); }
+
+  .charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .chart-box {
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(49, 50, 68, 0.9), rgba(24, 24, 37, 0.95));
+    border: 1px solid rgba(205, 214, 244, 0.08);
+    padding: 10px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+    animation: fadeUp 0.75s ease both;
+  }
+  .chart-box h3 {
+    font-size: 10px;
+    color: var(--subtext);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .anomaly-log {
+    background: linear-gradient(145deg, rgba(49, 50, 68, 0.9), rgba(24, 24, 37, 0.95));
+    border: 1px solid rgba(205, 214, 244, 0.08);
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+    animation: fadeUp 0.8s ease both;
+  }
+  .anomaly-log h3 {
+    font-size: 10px;
+    color: var(--subtext);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .log-item {
+    border-bottom: 1px solid rgba(205, 214, 244, 0.08);
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--red);
+  }
+  .log-item .time { color: var(--muted); font-size: 10px; }
+
+  .card,
+  .chart-box,
+  .anomaly-log {
+    min-width: 0;
+  }
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .bar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { font-size: 10px; color: var(--subtext); width: 80px; }
+  .bar-track {
+    flex: 1;
+    background: rgba(205, 214, 244, 0.08);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--mauve));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .bar-fill.hot { background: linear-gradient(90deg, var(--peach), var(--yellow)); }
+  .bar-val { font-size: 10px; color: var(--muted); width: 50px; text-align: right; }
+
+  footer {
+    text-align: center;
+    font-family: "Space Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--subtext);
+    padding-top: 3.25rem;
+    animation: fadeUp 0.8s ease 0.4s both;
+  }
+
+  @media (max-width: 900px) {
+    .grid,
+    .charts {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 8px; }
+    .hero { min-height: 12vh; }
+    h1 {
+      letter-spacing: 0.1em;
+      padding-right: 0.4em;
+      font-size: 0.9rem;
+    }
+    .grid,
+    .charts {
+      grid-template-columns: 1fr;
+    }
+    .bar-row {
+      flex-wrap: wrap;
+    }
+    .bar-label {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Why Is It Blinking ?</h1>
+</div>
+
+<!-- Gauge Cards -->
+<div class="grid">
+  <div class="card" id="card-rpm">
+    <div class="label">RPM</div>
+    <div class="value" id="val-rpm">—</div>
+    <div class="status" id="status-rpm">● NORMAL</div>
+  </div>
+  <div class="card" id="card-speed">
+    <div class="label">Speed</div>
+    <div class="value" id="val-speed">—<span class="unit">km/h</span></div>
+    <div class="status">● NORMAL</div>
+  </div>
+  <div class="card" id="card-temp">
+    <div class="label">Coolant Temp</div>
+    <div class="value" id="val-temp">—<span class="unit">°C</span></div>
+    <div class="status" id="status-temp">● NORMAL</div>
+  </div>
+  <div class="card" id="card-battery">
+    <div class="label">Battery</div>
+    <div class="value" id="val-battery">—<span class="unit">V</span></div>
+    <div class="status" id="status-battery">● NORMAL</div>
+  </div>
+</div>
+
+<!-- Bar Meters -->
+<div class="charts">
+  <div class="chart-box">
+    <h3>Live Parameters</h3>
+    <div class="bar-group">
+      <div class="bar-row">
+        <span class="bar-label">Throttle</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-throttle" style="width:0%"></div></div>
+        <span class="bar-val" id="bval-throttle">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Eng. Load</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-load" style="width:0%"></div></div>
+        <span class="bar-val" id="bval-load">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Intake Temp</span>
+        <div class="bar-track"><div class="bar-fill hot" id="bar-intake" style="width:0%"></div></div>
+        <span class="bar-val" id="bval-intake">0°C</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Fuel Press.</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-fuel" style="width:0%"></div></div>
+        <span class="bar-val" id="bval-fuel">0 kPa</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <h3>Stats</h3>
+    <div class="bar-group" id="stats-box">
+      <div style="color:#444; font-size:11px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- RPM Chart -->
+<div class="charts">
+  <div class="chart-box">
+    <h3>RPM History</h3>
+    <canvas id="rpmChart" height="120"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Temperature History</h3>
+    <canvas id="tempChart" height="120"></canvas>
+  </div>
+</div>
+
+<!-- Anomaly Log -->
+<div class="anomaly-log">
+  <h3>Anomaly Log</h3>
+  <div id="anomaly-list"><div style="color:#333;font-size:11px;">No anomalies detected</div></div>
+</div>
+  <footer>Built.By.Prangshu &copy; 2026</footer>
+
+<script>
+const rpmCtx = document.getElementById('rpmChart').getContext('2d');
+const tempCtx = document.getElementById('tempChart').getContext('2d');
+
+const chartConfig = (label, color) => ({
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label,
+      data: [],
+      borderColor: color,
+      borderWidth: 1.5,
+      pointRadius: 0,
+      tension: 0.3,
+      fill: true,
+      backgroundColor: color + '15'
+    }]
+  },
+  options: {
+    responsive: true,
+    animation: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { display: false },
+      y: {
+        grid: { color: 'rgba(205, 214, 244, 0.08)' },
+        ticks: { color: '#a6adc8', font: { size: 10 } }
+      }
+    }
+  }
+});
+
+const rpmChart  = new Chart(rpmCtx,  chartConfig('RPM', '#89b4fa'));
+const tempChart = new Chart(tempCtx, chartConfig('°C',  '#fab387'));
+
+function addPoint(chart, label, value) {
+  chart.data.labels.push(label);
+  chart.data.datasets[0].data.push(value);
+  if (chart.data.labels.length > 40) {
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+  chart.update();
+}
+
+// Update gauges
+async function updateLatest() {
+  const res = await fetch('/api/latest');
+  const d = await res.json();
+  if (!d.rpm) return;
+
+  document.getElementById('val-rpm').textContent     = d.rpm;
+  document.getElementById('val-speed').innerHTML     = d.speed + '<span class="unit">km/h</span>';
+  document.getElementById('val-temp').innerHTML      = d.coolant_temp + '<span class="unit">°C</span>';
+  document.getElementById('val-battery').innerHTML   = d.battery_voltage + '<span class="unit">V</span>';
+
+  // Bars
+  document.getElementById('bar-throttle').style.width = d.throttle + '%';
+  document.getElementById('bval-throttle').textContent = d.throttle + '%';
+  document.getElementById('bar-load').style.width = d.engine_load + '%';
+  document.getElementById('bval-load').textContent = d.engine_load + '%';
+  document.getElementById('bar-intake').style.width = Math.min(d.intake_temp, 100) + '%';
+  document.getElementById('bval-intake').textContent = d.intake_temp + '°C';
+  document.getElementById('bar-fuel').style.width = Math.min(d.fuel_pressure * 2, 100) + '%';
+  document.getElementById('bval-fuel').textContent = d.fuel_pressure + ' kPa';
+
+  // Anomaly highlight
+  const rpmCard = document.getElementById('card-rpm');
+  if (d.anomaly) {
+    rpmCard.classList.add('anomaly');
+    document.getElementById('status-rpm').textContent = '● ANOMALY';
+    document.getElementById('status-rpm').style.color = '#ff3b3b';
+  } else {
+    rpmCard.classList.remove('anomaly');
+    document.getElementById('status-rpm').textContent = '● NORMAL';
+    document.getElementById('status-rpm').style.color = '#2ecc71';
+  }
+
+  // Temp warning
+  const tempCard = document.getElementById('card-temp');
+  if (d.coolant_temp > 98) {
+    tempCard.classList.add('anomaly');
+    document.getElementById('status-temp').textContent = '● HIGH TEMP';
+    document.getElementById('status-temp').style.color = '#ff3b3b';
+  }
+
+  const now = new Date().toLocaleTimeString();
+  addPoint(rpmChart,  now, d.rpm);
+  addPoint(tempChart, now, d.coolant_temp);
+}
+
+// Stats
+async function updateStats() {
+  const res = await fetch('/api/stats');
+  const s = await res.json();
+  document.getElementById('stats-box').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div><div style="color:#444;font-size:10px;letter-spacing:1px">AVG RPM</div>
+           <div style="font-size:20px;color:#fff">${s.avg_rpm}</div></div>
+      <div><div style="color:#444;font-size:10px;letter-spacing:1px">MAX RPM</div>
+           <div style="font-size:20px;color:#fff">${s.max_rpm}</div></div>
+      <div><div style="color:#444;font-size:10px;letter-spacing:1px">AVG TEMP</div>
+           <div style="font-size:20px;color:#fff">${s.avg_temp}°C</div></div>
+      <div><div style="color:#444;font-size:10px;letter-spacing:1px">ANOMALIES</div>
+           <div style="font-size:20px;color:#ff6b6b">${s.anomaly_count}</div></div>
+    </div>
+  `;
+}
+
+// Anomalies
+async function updateAnomalies() {
+  const res = await fetch('/api/anomalies');
+  const list = await res.json();
+  if (!list.length) return;
+  document.getElementById('anomaly-list').innerHTML = list.map(a => `
+    <div class="log-item">
+      <div class="time">${a.timestamp}</div>
+      <div>${a.message}</div>
+    </div>
+  `).join('');
+}
+
+// Poll every 2 seconds
+updateLatest();
+updateStats();
+updateAnomalies();
+setInterval(updateLatest, 2000);
+setInterval(updateStats, 10000);
+setInterval(updateAnomalies, 5000);
+</script>
+</body>
+</html>
