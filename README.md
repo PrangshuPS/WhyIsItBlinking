@@ -1,17 +1,52 @@
+# Why Is It Blinking ?
 
-# Why is it Blinking?
-Ever wated to know why your dashboard was full of blinking LEDs but you could know why. 
+### IoT Sensor Data Pipeline & Motorsport Telemetry Analytics Dashboard
 
-## IoT Sensor Data Pipeline and Analytics Dashboard
+Have you ever looked at a vehicle dashboard full of blinking warning lights and wondered exactly *why*? 
 
-An end-to-end data engineering and analytics platform that ingests real-time telematics from an ESP32 sensor node, processes data through an automated ETL pipeline, and visualizes system health metrics on an interactive web dashboard.
+**Why Is It Blinking?** is an end-to-end data engineering and analytics platform. It ingests high-fidelity physical telemetry data (such as throttle input, sequential gearing, braking pressure, and engine RPM curves), processes it through a local relational database, and streams it into an interactive web interface for real-time diagnostics and anomaly tracking.
 
-## System Architecture
+---
 
-1. **Data Source**: ESP32 microcontroller reading environmental sensors (DHT22/BME280) and streaming structured JSON payloads over HTTP POST/MQTT.
-2. **Ingestion & Storage**: A Python ingestion script processes the stream and writes concurrently to a local SQLite database for edge processing and Firebase for cloud availability.
-3. **ETL Pipeline**: Python and Pandas scripts handle data cleaning, compute rolling and hourly averages, and execute statistical anomaly detection to flag critical thresholds.
-4. **Analytics Layer**: A Streamlit dashboard utilizing Plotly for live time-series tracking, operational gauges, predictive maintenance flags, and anomaly notifications.
-5. **Automation**: CI/CD workflows managed via GitHub Actions to automatically run test suites, validate data schemas using pytest, and trigger ETL tasks.
+## 🛠️ System Architecture
 
-Still under preocess 
+* **Data Source:** High-fidelity motorsport data stream mimicking real-world vehicle telemetry profiles (coherent acceleration curves, sequential downshifts, and braking pressure spikes).
+* **Ingestion Backend:** Built using **FastAPI** to handle asynchronous concurrent telemetry payloads with low latency.
+* **Storage Layer:** Relational **MySQL** storage designed to cache historical laps, manage indices, and serve time-series tracking data.
+* **Analytics Layer:** A lightweight interactive analytics engine displaying live time-series tracking, mechanical status operational gauges, and sequential rev-matching indicators.
+* **CI/CD Pipeline:** Automated GitHub Actions workflows that run `pytest` suites to validate schema conformity and verify endpoints before deployment.
+
+---
+
+
+### Prerequisites
+* Python 3.10+
+* requirements.txt
+* MySQL Server
+
+<!--
+### Installation & Local Launch
+
+```bash
+# 1. Clone the repository
+git clone [https://github.com/your-username/WhyIsItBlinking.git](https://github.com/your-username/WhyIsItBlinking.git)
+cd WhyIsItBlinking
+
+# 2. Set up an isolated virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
+# 3. Install core framework requirements
+pip install -r requirements.txt
+
+# 4. Set up your environment variables (.env)
+cat <<EOF > .env
+DATABASE_URL="mysql+mysqlconnector://root:password@localhost/telemetry_db"
+PORT=8000
+HOST=0.0.0.0
+EOF
+
+# 5. Boot the FastAPI web server manually
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+-->
