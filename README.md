@@ -8,7 +8,7 @@ Have you ever looked at a vehicle dashboard full of blinking warning lights and 
 
 ---
 
-## 🛠️ System Architecture
+## System Architecture
 
 * **Data Source:** High-fidelity motorsport data stream mimicking real-world vehicle telemetry profiles (coherent acceleration curves, sequential downshifts, and braking pressure spikes).
 * **Ingestion Backend:** Built using **FastAPI** to handle asynchronous concurrent telemetry payloads with low latency.
