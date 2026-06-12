@@ -72,6 +72,61 @@
     align-items: center;
     justify-content: center;
   }
+  .control-panel {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr auto;
+    gap: 10px;
+    align-items: end;
+    margin: 0 auto 10px;
+    padding: 10px;
+    border-radius: 15px;
+    border: 1px solid rgba(205, 214, 244, 0.08);
+    background: linear-gradient(145deg, rgba(49, 50, 68, 0.9), rgba(24, 24, 37, 0.95));
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+  }
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .control-group label {
+    font-size: 10px;
+    color: var(--subtext);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .control-group select,
+  .control-group button {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(205, 214, 244, 0.12);
+    background: rgba(24, 24, 37, 0.9);
+    color: var(--text);
+    padding: 10px 12px;
+    font: inherit;
+  }
+  .control-group button {
+    cursor: pointer;
+    background: linear-gradient(90deg, rgba(137, 180, 250, 0.24), rgba(203, 166, 247, 0.24));
+  }
+  .control-group button:hover { filter: brightness(1.05); }
+  .selection-pill {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--subtext);
+  }
+  .selection-pill span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(205, 214, 244, 0.06);
+    border: 1px solid rgba(205, 214, 244, 0.08);
+  }
   h1 {
     display: inline-block;
     width: 0;
@@ -275,6 +330,29 @@
   <h1>Why Is It Blinking ?</h1>
 </div>
 
+<div class="control-panel">
+  <div class="control-group">
+    <label for="track-select">Track</label>
+    <select id="track-select">
+      <option>Loading tracks...</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label for="driver-select">Driver Number</label>
+    <select id="driver-select">
+      <option>Loading drivers...</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>&nbsp;</label>
+    <button id="load-openf1">Load OpenF1 Data</button>
+  </div>
+  <div class="selection-pill" id="selection-pill">
+    <span>OpenF1 historical mode</span>
+    <span id="selection-status">Waiting for selection</span>
+  </div>
+</div>
+
 <!-- Gauge Cards -->
 <div class="grid">
   <div class="card" id="card-rpm">
@@ -357,6 +435,12 @@
 <script>
 const rpmCtx = document.getElementById('rpmChart').getContext('2d');
 const tempCtx = document.getElementById('tempChart').getContext('2d');
+const trackSelect = document.getElementById('track-select');
+const driverSelect = document.getElementById('driver-select');
+const selectionStatus = document.getElementById('selection-status');
+const loadButton = document.getElementById('load-openf1');
+
+let trackCatalog = [];
 
 const chartConfig = (label, color) => ({
   type: 'line',
@@ -390,6 +474,76 @@ const chartConfig = (label, color) => ({
 const rpmChart  = new Chart(rpmCtx,  chartConfig('RPM', '#89b4fa'));
 const tempChart = new Chart(tempCtx, chartConfig('°C',  '#fab387'));
 
+function formatTrackLabel(track) {
+  return `${track.year} · ${track.circuit_short_name || track.location || track.meeting_name}`;
+}
+
+function setSelectionStatus(text) {
+  selectionStatus.textContent = text;
+}
+
+async function loadTracks() {
+  const res = await fetch('/api/openf1/tracks');
+  const payload = await res.json();
+  trackCatalog = payload.tracks || [];
+  trackSelect.innerHTML = trackCatalog.map(track => (
+    `<option value="${track.meeting_key}">${formatTrackLabel(track)}</option>`
+  )).join('');
+
+  if (trackCatalog.length) {
+    const defaultTrack = trackCatalog[0];
+    await loadDrivers(defaultTrack.meeting_key);
+    trackSelect.value = String(defaultTrack.meeting_key);
+  } else {
+    trackSelect.innerHTML = '<option value="">No OpenF1 tracks available</option>';
+    driverSelect.innerHTML = '<option value="">No drivers available</option>';
+  }
+}
+
+async function loadDrivers(meetingKey) {
+  if (!meetingKey) {
+    driverSelect.innerHTML = '<option value="">Select a track first</option>';
+    return;
+  }
+
+  const res = await fetch(`/api/openf1/drivers?meeting_key=${meetingKey}`);
+  const payload = await res.json();
+  const drivers = payload.drivers || [];
+  driverSelect.innerHTML = drivers.map(driver => (
+    `<option value="${driver.driver_number}">${driver.driver_number} · ${driver.full_name}${driver.team_name ? ` (${driver.team_name})` : ''}</option>`
+  )).join('');
+
+  if (drivers.length) {
+    driverSelect.value = String(drivers[0].driver_number);
+  } else {
+    driverSelect.innerHTML = '<option value="">No OpenF1 drivers available</option>';
+  }
+}
+
+async function applySelection() {
+  const meetingKey = trackSelect.value;
+  const driverNumber = driverSelect.value;
+  if (!meetingKey || !driverNumber) {
+    setSelectionStatus('Select a track and driver');
+    return;
+  }
+
+  setSelectionStatus('Loading OpenF1 session...');
+  const res = await fetch(`/api/openf1/select?meeting_key=${meetingKey}&driver_number=${driverNumber}`, {
+    method: 'POST'
+  });
+  const payload = await res.json();
+  if (payload.status !== 'ok') {
+    setSelectionStatus(payload.message || 'OpenF1 load failed');
+    return;
+  }
+
+  setSelectionStatus(`${payload.track_name} · ${payload.driver_name}`);
+  await updateLatest();
+  await updateStats();
+  await updateAnomalies();
+}
+
 function addPoint(chart, label, value) {
   chart.data.labels.push(label);
   chart.data.datasets[0].data.push(value);
@@ -404,7 +558,7 @@ function addPoint(chart, label, value) {
 async function updateLatest() {
   const res = await fetch('/api/latest');
   const d = await res.json();
-  if (!d.rpm) return;
+  if (!d || !d.rpm) return;
 
   document.getElementById('val-rpm').textContent     = d.rpm;
   document.getElementById('val-speed').innerHTML     = d.speed + '<span class="unit">km/h</span>';
@@ -478,12 +632,20 @@ async function updateAnomalies() {
 }
 
 // Poll every 2 seconds
+loadTracks().then(() => applySelection()).catch(() => setSelectionStatus('OpenF1 load failed'));
 updateLatest();
 updateStats();
 updateAnomalies();
 setInterval(updateLatest, 2000);
 setInterval(updateStats, 10000);
 setInterval(updateAnomalies, 5000);
+
+trackSelect.addEventListener('change', async () => {
+  await loadDrivers(trackSelect.value);
+});
+
+loadButton.addEventListener('click', applySelection);
+driverSelect.addEventListener('change', () => setSelectionStatus('Ready to load selected driver'));
 </script>
 </body>
 </html>

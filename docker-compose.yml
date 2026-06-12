@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: telemetry_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-ps04}
+      MARIADB_DATABASE: ${DB_NAME:-vehicle_telemetry}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/prangshups/whyisitblinking:latest
+    build: .
+    container_name: telemetry_app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-ps04}
+      - DB_NAME=${DB_NAME:-vehicle_telemetry}
+      - OPENF1_CACHE_DB=/app/cache/openf1_cache.db
+      - OBD_PORT=${OBD_PORT:-/dev/ttyUSB0}
+    volumes:
+      - cache_data:/app/cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: telemetry_watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup
+
+    # Optional: Map physical OBD USB scanner if needed in future on Raspberry Pi
+    # devices:
+    #   - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+volumes:
+  db_data:
+  cache_data:
