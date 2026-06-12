@@ -24,6 +24,9 @@ Have you ever looked at a vehicle dashboard full of blinking warning lights and 
 * requirements.txt
 * MySQL Server
 
+---
+VISIT - [WhyisitBlinking](https://ubuntu-terminal-production-8f22.up.railway.app/) to checkout
+
 <!--
 ### Installation & Local Launch
 
